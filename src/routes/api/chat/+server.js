@@ -11,20 +11,21 @@ let model;
 let chain;
 let memory;
 
-const SYSTEM_PROMPT = `You are a professional customer service agent named Alex. Your role is to help customers with their queries, orders, and support needs.
-When you need to use specific functions, use the tool call format:
-<tool_call>{"name": "tool_name", "arguments": {}}</tool_call>
+const SYSTEM_PROMPT = `You are a customer service AI. Be direct and concise. Only use tools when explicitly requested.
+Use tool calls in this format: <tool_call>{"name": "tool_name", "arguments": {}}</tool_call>
 
 Available tools:
-- checkOrder: Checks order status (args: orderId)
-- trackShipment: Gets shipping updates (args: trackingId)
-- getProductInfo: Gets product details (args: productId)
-- getFAQ: Returns FAQ information (args: topic)
-- createTicket: Creates support ticket (args: issue, priority)
-- checkAvailability: Checks product stock (args: productId)
+- checkOrder: Checks order status (args: orderId) - Use when order number is provided
+- trackShipment: Gets shipping updates (args: trackingId) - Use when tracking number is provided
+- getProductInfo: Gets product details (args: productId) - Use when product ID is mentioned
+- getFAQ: Returns FAQ information (args: topic) - Use for policy questions
+- createTicket: Creates support ticket (args: issue, priority) - Use when support ticket is requested
+- checkAvailability: Checks product stock (args: productId) - Use when stock check is requested
 
-Always be polite, professional, and helpful. If you don't have specific information, use the appropriate tool to fetch it.
-Start your conversation with a friendly greeting and ask how you can help.`;
+Do not add any greeting or additional text. Simply:
+1. Identify the required tool from user's input
+2. Make the tool call
+3. Return only the tool's response`;
 
 async function handleToolCall(response, memory) {
     const start = response.indexOf("<tool_call>") + "<tool_call>".length;
@@ -35,7 +36,6 @@ async function handleToolCall(response, memory) {
         const toolCall = JSON.parse(toolCallJson);
         const toolName = toolCall.name;
         const args = toolCall.arguments;
-        let result = null;
 
         const toolActions = {
             checkOrder: async ({ orderId }) => {
@@ -79,15 +79,15 @@ async function handleToolCall(response, memory) {
         };
 
         if (toolName in toolActions) {
-            result = await toolActions[toolName](args);
-            const originalResponse = response.replace(/<tool_call>.*<\/tool_call>/, '').trim();
-            return `${originalResponse}\n${result}`;
+            const result = await toolActions[toolName](args);
+            // Return only the tool result, without the original response
+            return result;
         } else {
-            return `Sorry, the tool "${toolName}" is not available.`;
+            return `Tool "${toolName}" not available.`;
         }
     } catch (error) {
         console.error('Tool call error:', error);
-        return `Sorry, there was an error processing your request: ${error.message}`;
+        return `Error: ${error.message}`;
     }
 }
 

@@ -48,6 +48,24 @@
             sendMessage();
         }
     };
+
+    const suggestions = [
+        { text: "track order #", hint: "Use order/tracking number", example: "track order #12345" },
+        { text: "check stock", hint: "Use product ID (e.g., P1, P2)", example: "check stock P1" },
+        { text: "shipping info", hint: "Get shipping policy", example: "shipping info" },
+        { text: "returns", hint: "Return policy", example: "returns" },
+        {
+            text: "create ticket",
+            hint: "Create support ticket",
+            example: "create ticket: order issue",
+        },
+    ];
+
+    function handleSuggestionClick(suggestion) {
+        userMessage = suggestion.example;
+        // Focus the input after setting the text
+        document.querySelector('input[type="text"]').focus();
+    }
 </script>
 
 <div class="flex flex-col h-screen bg-[#f5f7fb]">
@@ -120,6 +138,43 @@
                         </div>
                     </div>
                 {/if}
+            </div>
+
+            <!-- Updated Suggestions Box -->
+            <div class="px-4 py-2 bg-blue-50 rounded-lg mb-2">
+                <p class="text-blue-600 font-medium mb-2 text-sm">Quick actions:</p>
+                <div class="flex flex-wrap gap-2">
+                    {#each suggestions as suggestion}
+                        <button
+                            on:click={() => handleSuggestionClick(suggestion)}
+                            class="group relative text-blue-700 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-full text-sm transition-colors duration-200 flex items-center gap-1"
+                        >
+                            <span>{suggestion.text}</span>
+                            <svg
+                                class="w-4 h-4 text-blue-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                            <!-- Tooltip -->
+                            <div
+                                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                            >
+                                {suggestion.hint}
+                                <div
+                                    class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"
+                                ></div>
+                            </div>
+                        </button>
+                    {/each}
+                </div>
             </div>
 
             <!-- Input Area -->

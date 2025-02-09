@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-
+    import { fly } from "svelte/transition";
     let chatHistory = [];
     let userMessage = "";
     let isLoading = false;

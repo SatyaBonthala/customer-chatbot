@@ -1,7 +1,7 @@
 import { ChatGroq } from '@langchain/groq';
 import { BufferMemory } from "langchain/memory";
 import { ConversationChain } from "langchain/chains";
-import { GROQ_API_KEY,POSTGRES_URL } from '$env/static/private';
+import { GROQ_API_KEY, POSTGRES_URL } from '$env/static/private';
 import { json } from '@sveltejs/kit';
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { PromptTemplate } from "@langchain/core/prompts";
@@ -73,33 +73,30 @@ async function handleToolCall(response, memory) {
             getProductInfo: async ({ productId }) => {
                 // Simulated product database
                 const products = {
-                    'P1': { name: 'Premium Widget', price: '$99.99', stock: 50 },
-                    'P2': { name: 'Basic Widget', price: '$49.99', stock: 100 },
-                    'P3': { name: 'Super Widget', price: '$149.99', stock: 25 }
+                    'P1': 'Premium Widget - $99.99 (50 in stock)',
+                    'P2': 'Basic Widget - $49.99 (100 in stock)',
+                    'P3': 'Super Widget - $149.99 (25 in stock)',
+                    'P4': 'Ultra Widget - $199.99 (10 in stock)',
+                    'P5': 'Mini Widget - $29.99 (200 in stock)'
                 };
                 return products[productId] || 'Product not found';
             },
             getFAQ: async ({ topic }) => {
                 try {
-                    console.log("🔍 Searching FAQ for:", topic);
-            
-                    const client = await pool.connect();
-                    const result = await client.query(
-                        'SELECT * FROM faqs WHERE LOWER(topic) = LOWER($1) LIMIT 1',
-                        [topic.trim()]
+
+                    const result = await pool.query(
+                        `SELECT * FROM faqs WHERE topic = $1`,
+                        [topic]
                     );
-                    client.release();
-            
-                    if (result.rows.length) {
-                        console.log("✅ Found FAQ Response:", result.rows[0].response);
+
+                    if (result.rows.length > 0) {
                         return result.rows[0].response;
-                    } else {
-                        console.log("⚠️ No matching FAQ found.");
-                        return "Sorry, I couldn't find information on that topic.";
                     }
+
+                    return "I apologize, but I couldn't find specific information about that topic. Could you try rephrasing your question or ask about something else?";
                 } catch (error) {
                     console.error("❌ Database Query Error:", error);
-                    return "Error retrieving FAQ information.";
+                    return "Sorry, I encountered an error while fetching the FAQ information. Please try again later.";
                 }
             },
             createTicket: async ({ issue, priority }) => {

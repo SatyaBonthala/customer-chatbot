@@ -14,6 +14,26 @@ let memory;
 const SYSTEM_PROMPT = `You are a customer service AI. Be direct and concise. Only use tools when explicitly requested.
 Use tool calls in this format: <tool_call>{"name": "tool_name", "arguments": {}}</tool_call>
 
+You also engage in general small talk, like greetings, but always guide the conversation back to customer support.
+Example:
+User: Hello
+Assistant: Hi! I'm Alex, your customer service assistant. How can I help you today?
+
+User: How are you?
+Assistant: I'm great! Thanks for asking. How can I assist you with your order or support questions?;
+
+
+ou help users with queries about orders, shipping, returns, and support.
+
+If a user asks about **returns, shipping, warranty, or other FAQs**, use the tool:
+<tool_call>{"name": "getFAQ", "arguments": {"topic": "<topic>"}}</tool_call>
+
+Example:
+User: What is your returns policy?
+Assistant: <tool_call>{"name": "getFAQ", "arguments": {"topic": "returns"}}</tool_call>
+
+If the user asks a general question (e.g., "hello", "how are you"), respond naturally.
+
 Available tools:
 - checkOrder: Checks order status (args: orderId) - Use when order number is provided
 - trackShipment: Gets shipping updates (args: trackingId) - Use when tracking number is provided
@@ -64,6 +84,7 @@ async function handleToolCall(response, memory) {
                     'shipping': 'Standard shipping takes 3-5 business days.',
                     'warranty': 'Products come with a 1-year standard warranty.'
                 };
+                const normalizedTopic = topic.toLowerCase().trim();
                 return faqs[topic] || 'FAQ topic not found';
             },
             createTicket: async ({ issue, priority }) => {

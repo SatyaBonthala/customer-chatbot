@@ -92,7 +92,6 @@ async function handleToolCall(response, memory) {
                     if (result.rows.length > 0) {
                         return result.rows[0].response;
                     }
-
                     return "I apologize, but I couldn't find specific information about that topic. Could you try rephrasing your question or ask about something else?";
                 } catch (error) {
                     console.error("❌ Database Query Error:", error);

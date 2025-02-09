@@ -1,16 +1,18 @@
 import { ChatGroq } from '@langchain/groq';
 import { BufferMemory } from "langchain/memory";
 import { ConversationChain } from "langchain/chains";
-import { GROQ_API_KEY } from '$env/static/private';
+import { GROQ_API_KEY,POSTGRES_URL } from '$env/static/private';
 import { json } from '@sveltejs/kit';
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { PromptTemplate } from "@langchain/core/prompts";
+import { Pool } from '@neondatabase/serverless';
 
 
 let model;
 let chain;
 let memory;
 
+const pool = new Pool({ connectionString: POSTGRES_URL });
 const SYSTEM_PROMPT = `You are a customer service AI. Be direct and concise. Only use tools when explicitly requested.
 Use tool calls in this format: <tool_call>{"name": "tool_name", "arguments": {}}</tool_call>
 
@@ -78,14 +80,27 @@ async function handleToolCall(response, memory) {
                 return products[productId] || 'Product not found';
             },
             getFAQ: async ({ topic }) => {
-                // Simulated FAQ database
-                const faqs = {
-                    'returns': 'Returns are accepted within 30 days of purchase with original receipt.',
-                    'shipping': 'Standard shipping takes 3-5 business days.',
-                    'warranty': 'Products come with a 1-year standard warranty.'
-                };
-                const normalizedTopic = topic.toLowerCase().trim();
-                return faqs[topic] || 'FAQ topic not found';
+                try {
+                    console.log("🔍 Searching FAQ for:", topic);
+            
+                    const client = await pool.connect();
+                    const result = await client.query(
+                        'SELECT * FROM faqs WHERE LOWER(topic) = LOWER($1) LIMIT 1',
+                        [topic.trim()]
+                    );
+                    client.release();
+            
+                    if (result.rows.length) {
+                        console.log("✅ Found FAQ Response:", result.rows[0].response);
+                        return result.rows[0].response;
+                    } else {
+                        console.log("⚠️ No matching FAQ found.");
+                        return "Sorry, I couldn't find information on that topic.";
+                    }
+                } catch (error) {
+                    console.error("❌ Database Query Error:", error);
+                    return "Error retrieving FAQ information.";
+                }
             },
             createTicket: async ({ issue, priority }) => {
                 // Simulated ticket creation
@@ -169,3 +184,5 @@ export async function POST({ request }) {
         return json({ error: 'Failed to get response' }, { status: 500 });
     }
 }
+
+
